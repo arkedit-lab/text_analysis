@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow, nosnippet, noarchive">
+    <title>文字数チェックツール</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c5aa0;
+            margin-bottom: 30px;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        .text-input {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .text-input:focus {
+            outline: none;
+            border-color: #2c5aa0;
+        }
+
+        .results {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            border-left: 4px solid #2c5aa0;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .char-types {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            margin-top: 20px;
+        }
+
+        .word-analysis {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            margin-top: 20px;
+        }
+
+        .char-types h3, .word-analysis h3 {
+            color: #2c5aa0;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .char-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+
+        .word-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+        }
+
+        .word-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .word-item:last-child {
+            border-bottom: none;
+        }
+
+        .word-item:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .word-text {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .word-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9rem;
+        }
+
+        .word-count {
+            color: #2c5aa0;
+            font-weight: bold;
+        }
+
+        .word-percent {
+            color: #666;
+        }
+
+        .word-controls {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .word-controls label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .word-controls input[type="number"] {
+            width: 60px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+
+        .word-controls select {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+
+        .no-words {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .char-item {
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+        }
+
+        .char-count {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2c5aa0;
+        }
+
+        .char-percent {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .char-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2c5aa0;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .clear-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .clear-btn:hover {
+            background: #c82333;
+        }
+
+        /* ファイル読み込みエリア */
+        .file-section {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .file-section h2 {
+            color: #2c5aa0;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .file-section h2 i {
+            margin-right: 10px;
+        }
+
+        .file-drop-area {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+
+        .file-drop-area:hover {
+            border-color: #2c5aa0;
+            background-color: #f8f9fa;
+        }
+
+        .file-drop-area.drag-over {
+            border-color: #2c5aa0;
+            background-color: #e3f2fd;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            color: #666;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .file-info ul {
+            margin: 10px 0 0 20px;
+            padding: 0;
+        }
+
+        .file-info li {
+            margin: 5px 0;
+        }
+
+        .file-size-warning {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .file-size-warning .size-limit {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #856404;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .file-size-warning .size-note {
+            font-size: 0.9rem;
+            color: #664d03;
+            margin-top: 5px;
+        }
+
+        .file-status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .file-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .file-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .file-status.processing {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #f1f3f4;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #2c5aa0;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .btn-file {
+            background: #17a2b8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-file:hover {
+            background: #138496;
+        }
+
+        .current-file {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: #e3f2fd;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            color: #1976d2;
+            display: none;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>文字数チェックツール（ファイル対応版）</h1>
+        
+        <!-- ファイル読み込みセクション -->
+        <div class="file-section">
+            <h2><i class="fas fa-file-import"></i> ファイル読み込み</h2>
+            <div class="file-drop-area" id="fileDropArea">
+                <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: #2c5aa0; margin-bottom: 10px;"></i>
+                <p><strong>ファイルをここにドラッグ&ドロップ</strong></p>
+                <p>または</p>
+                <button class="btn-file" id="fileSelectBtn">
+                    <i class="fas fa-folder-open"></i>
+                    ファイルを選択
+                </button>
+                <input type="file" id="fileInput" class="file-input" accept=".txt,.pdf,.docx" multiple>
+            </div>
+            
+            <div class="file-size-warning">
+                <div class="size-limit">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    最大ファイルサイズ: 10MB
+                </div>
+                <div class="size-note">
+                    これを超えるファイルは処理できません
+                </div>
+            </div>
+            
+            <div class="file-info">
+                <strong><i class="fas fa-info-circle"></i> 対応ファイル形式・制限</strong>
+                <ul>
+                    <li><strong>対応形式:</strong> .txt（テキストファイル）、.pdf（PDFファイル）、.docx（Word文書）</li>
+                    <li><strong>PDF制限:</strong> テキスト形式のPDFのみ（画像・スキャンPDFは非対応）</li>
+                    <li><strong>Word制限:</strong> .docx形式のみ（旧.doc形式は非対応）、テキストのみ抽出</br>（Word上のホームメニューから設定した段落番号や箇条書きのテキストはカウントされません）</li>
+                    <li><strong>文字エンコーディング:</strong> UTF-8、Shift-JIS自動判定</li>
+                </ul>
+            </div>
+
+            <div class="file-status" id="fileStatus"></div>
+            <div class="progress-bar" id="progressBar" style="display: none;">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="current-file" id="currentFile"></div>
+        </div>
+
+        <div class="input-section">
+            <h2><i class="fas fa-edit"></i> テキスト入力</h2>
+            <textarea 
+                id="textInput" 
+                class="text-input" 
+                placeholder="ここに文字を入力するか、上でファイルを読み込んでください...&#10;&#10;対応ファイル：&#10;・.txt（テキストファイル）&#10;・.pdf（PDFファイル）&#10;・.docx（Word文書）&#10;&#10;リアルタイムで文字数・文字種別・単語分析を実行します。"
+            ></textarea>
+            <button id="clearBtn" class="clear-btn">クリア</button>
+        </div>
+
+        <div class="results">
+            <div class="stat-grid">
+                <div class="stat-item">
+                    <span class="stat-value" id="totalChars">0</span>
+                    <div class="stat-label">総文字数</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="noSpaceChars">0</span>
+                    <div class="stat-label">空白除く</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="noBreakChars">0</span>
+                    <div class="stat-label">改行除く</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="lineCount">0</span>
+                    <div class="stat-label">行数</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="byteCount">0</span>
+                    <div class="stat-label">バイト数</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="readTime">0</span>
+                    <div class="stat-label">読了時間(分)</div>
+                </div>
+            </div>
+
+            <div class="char-types">
+                <h3>文字種別分析</h3>
+                <div class="char-grid">
+                    <div class="char-item">
+                        <div class="char-count" id="hiraganaCount">0</div>
+                        <div class="char-percent" id="hiraganaPercent">0%</div>
+                        <div class="char-label">ひらがな</div>
+                    </div>
+                    <div class="char-item">
+                        <div class="char-count" id="katakanaCount">0</div>
+                        <div class="char-percent" id="katakanaPercent">0%</div>
+                        <div class="char-label">カタカナ</div>
+                    </div>
+                    <div class="char-item">
+                        <div class="char-count" id="kanjiCount">0</div>
+                        <div class="char-percent" id="kanjiPercent">0%</div>
+                        <div class="char-label">漢字</div>
+                    </div>
+                    <div class="char-item">
+                        <div class="char-count" id="alphaNumCount">0</div>
+                        <div class="char-percent" id="alphaNumPercent">0%</div>
+                        <div class="char-label">英数字</div>
+                    </div>
+                    <div class="char-item">
+                        <div class="char-count" id="symbolCount">0</div>
+                        <div class="char-percent" id="symbolPercent">0%</div>
+                        <div class="char-label">記号</div>
+                    </div>
+                    <div class="char-item">
+                        <div class="char-count" id="spaceCount">0</div>
+                        <div class="char-percent" id="spacePercent">0%</div>
+                        <div class="char-label">空白・改行</div>
+                    </div>
+                </div>
+            <div class="word-analysis">
+                <h3>単語分析（SEO用）</h3>
+                <div class="word-controls">
+                    <label>最小文字数: <input type="number" id="minWordLength" value="2" min="1" max="10"></label>
+                    <label>表示件数: <input type="number" id="maxWords" value="20" min="5" max="100"></label>
+                    <label>ソート: 
+                        <select id="sortOrder">
+                            <option value="count">出現回数順</option>
+                            <option value="percent">割合順</option>
+                            <option value="alphabetical">アルファベット順</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="word-list" id="wordList">
+                    <div class="no-words">テキストを入力すると単語分析が表示されます</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM要素の取得
+        const textInput = document.getElementById('textInput');
+        const clearBtn = document.getElementById('clearBtn');
+        
+        // ファイル関連要素
+        const fileDropArea = document.getElementById('fileDropArea');
+        const fileSelectBtn = document.getElementById('fileSelectBtn');
+        const fileInput = document.getElementById('fileInput');
+        const fileStatus = document.getElementById('fileStatus');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const currentFile = document.getElementById('currentFile');
+
+        // 基本統計表示要素の取得
+        const totalChars = document.getElementById('totalChars');
+        const noSpaceChars = document.getElementById('noSpaceChars');
+        const noBreakChars = document.getElementById('noBreakChars');
+        const lineCount = document.getElementById('lineCount');
+        const byteCount = document.getElementById('byteCount');
+        const readTime = document.getElementById('readTime');
+
+        // 文字種別表示要素の取得
+        const hiraganaCount = document.getElementById('hiraganaCount');
+        const hiraganaPercent = document.getElementById('hiraganaPercent');
+        const katakanaCount = document.getElementById('katakanaCount');
+        const katakanaPercent = document.getElementById('katakanaPercent');
+        const kanjiCount = document.getElementById('kanjiCount');
+        const kanjiPercent = document.getElementById('kanjiPercent');
+        const alphaNumCount = document.getElementById('alphaNumCount');
+        const alphaNumPercent = document.getElementById('alphaNumPercent');
+        const symbolCount = document.getElementById('symbolCount');
+        const symbolPercent = document.getElementById('symbolPercent');
+        const spaceCount = document.getElementById('spaceCount');
+        const spacePercent = document.getElementById('spacePercent');
+
+        // 単語分析表示要素の取得
+        const wordList = document.getElementById('wordList');
+        const minWordLength = document.getElementById('minWordLength');
+        const maxWords = document.getElementById('maxWords');
+        const sortOrder = document.getElementById('sortOrder');
+
+        // 文字種別の正規表現
+        const REGEX = {
+            hiragana: /[ひ-ゖ]/g,
+            katakana: /[ア-ヾ]/g,
+            kanji: /[一-龯]/g,
+            alphaNum: /[A-Za-z0-9]/g,
+            symbol: /[^\w\s\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g,
+            space: /[\s\n\r\t]/g
+        };
+
+        // パーセンテージを計算する関数
+        function calculatePercentage(count, total) {
+            return total > 0 ? Math.round((count / total) * 100) : 0;
+        }
+
+        // PDF.jsとMammoth.jsの動的読み込みと設定
+        let pdfLib = null;
+        let mammothLib = null;
+        let pdfLibLoading = false;
+        let mammothLibLoading = false;
+
+        async function loadPDFJS() {
+            if (pdfLib) return pdfLib;
+            if (pdfLibLoading) {
+                // 読み込み中の場合は待機
+                while (pdfLibLoading) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                return pdfLib;
+            }
+
+            pdfLibLoading = true;
+            
+            try {
+                // PDF.jsライブラリを動的に読み込み
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+                
+                await new Promise((resolve, reject) => {
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+
+                // グローバルのpdfjsLibが利用可能になるまで待機
+                let attempts = 0;
+                while (!window.pdfjsLib && attempts < 50) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+
+                if (!window.pdfjsLib) {
+                    throw new Error('PDF.jsライブラリの初期化に失敗しました');
+                }
+
+                // ワーカーの設定
+                window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                
+                pdfLib = window.pdfjsLib;
+                console.log('PDF.jsライブラリが正常に読み込まれました');
+                
+            } catch (error) {
+                console.error('PDF.jsライブラリの読み込みに失敗:', error);
+                throw new Error('PDF.jsライブラリの読み込みに失敗しました。PDFファイルの処理はできません。');
+            } finally {
+                pdfLibLoading = false;
+            }
+
+            return pdfLib;
+        }
+
+        async function loadMammothJS() {
+            if (mammothLib) return mammothLib;
+            if (mammothLibLoading) {
+                // 読み込み中の場合は待機
+                while (mammothLibLoading) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                return mammothLib;
+            }
+
+            mammothLibLoading = true;
+            
+            try {
+                // Mammoth.jsライブラリを動的に読み込み
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js';
+                
+                await new Promise((resolve, reject) => {
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+
+                // グローバルのmammothが利用可能になるまで待機
+                let attempts = 0;
+                while (!window.mammoth && attempts < 50) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+
+                if (!window.mammoth) {
+                    throw new Error('Mammoth.jsライブラリの初期化に失敗しました');
+                }
+                
+                mammothLib = window.mammoth;
+                console.log('Mammoth.jsライブラリが正常に読み込まれました');
+                
+            } catch (error) {
+                console.error('Mammoth.jsライブラリの読み込みに失敗:', error);
+                throw new Error('Mammoth.jsライブラリの読み込みに失敗しました。Wordファイルの処理はできません。');
+            } finally {
+                mammothLibLoading = false;
+            }
+
+            return mammothLib;
+        }
+
+        // ファイルサイズをチェックする関数
+        function checkFileSize(file) {
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            return file.size <= maxSize;
+        }
+
+        // ファイルサイズを人間が読める形式に変換
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // 進捗表示を更新する関数
+        function updateProgress(percentage, message = '') {
+            progressFill.style.width = percentage + '%';
+            if (message) {
+                fileStatus.textContent = message;
+            }
+        }
+
+        // ファイル状態表示を更新する関数
+        function showFileStatus(message, type = 'processing') {
+            fileStatus.textContent = message;
+            fileStatus.className = `file-status ${type}`;
+            
+            if (type === 'processing') {
+                progressBar.style.display = 'block';
+            } else {
+                progressBar.style.display = 'none';
+            }
+        }
+
+        // テキストファイルを読み込む関数
+        async function readTextFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    resolve(e.target.result);
+                };
+                
+                reader.onerror = function() {
+                    reject(new Error('テキストファイルの読み込みに失敗しました'));
+                };
+                
+                // エンコーディング自動判定を試行
+                try {
+                    reader.readAsText(file, 'UTF-8');
+                } catch (error) {
+                    reader.readAsText(file, 'Shift-JIS');
+                }
+            });
+        }
+
+        // Wordファイルを読み込む関数
+        async function readWordFile(file) {
+            // Mammoth.jsライブラリを動的に読み込み
+            const mammoth = await loadMammothJS();
+            
+            const arrayBuffer = await file.arrayBuffer();
+            
+            try {
+                // テキストのみを抽出（書式は無視）
+                const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                
+                if (result.messages && result.messages.length > 0) {
+                    console.log('Word処理中の警告:', result.messages);
+                }
+                
+                return result.value.trim();
+            } catch (error) {
+                throw new Error(`Wordファイルの処理中にエラーが発生しました: ${error.message}`);
+            }
+        }
+        async function readPDFFile(file) {
+            // PDF.jsライブラリを動的に読み込み
+            const pdfjsLib = await loadPDFJS();
+            
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            
+            let fullText = '';
+            const totalPages = pdf.numPages;
+            
+            for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+                updateProgress((pageNum / totalPages) * 100, `PDFを解析中... (${pageNum}/${totalPages}ページ)`);
+                
+                const page = await pdf.getPage(pageNum);
+                const textContent = await page.getTextContent();
+                
+                // テキストアイテムを結合
+                const pageText = textContent.items
+                    .map(item => item.str)
+                    .join(' ')
+                    .replace(/\s+/g, ' ') // 複数の空白を1つに
+                    .trim();
+                
+                if (pageText) {
+                    fullText += pageText + '\n\n';
+                }
+            }
+            
+            return fullText.trim();
+        }
+
+        // ファイルを処理する関数
+        async function processFiles(files) {
+            if (!files || files.length === 0) return;
+            
+            let combinedText = '';
+            let processedFiles = [];
+            let errorFiles = [];
+            
+            showFileStatus('ファイルを処理中...', 'processing');
+            updateProgress(0);
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                
+                try {
+                    // ファイルサイズチェック
+                    if (!checkFileSize(file)) {
+                        errorFiles.push(`${file.name}: ファイルサイズが10MBを超えています (${formatFileSize(file.size)})`);
+                        continue;
+                    }
+                    
+                    updateProgress((i / files.length) * 100, `${file.name} を処理中...`);
+                    
+                    let fileText = '';
+                    const fileExtension = file.name.split('.').pop().toLowerCase();
+                    
+                    if (fileExtension === 'txt') {
+                        fileText = await readTextFile(file);
+                    } else if (fileExtension === 'pdf') {
+                        fileText = await readPDFFile(file);
+                    } else if (fileExtension === 'docx') {
+                        fileText = await readWordFile(file);
+                    } else {
+                        errorFiles.push(`${file.name}: 対応していないファイル形式です`);
+                        continue;
+                    }
+                    
+                    if (fileText.trim()) {
+                        combinedText += fileText + '\n\n';
+                        processedFiles.push(`${file.name} (${formatFileSize(file.size)})`);
+                    } else {
+                        errorFiles.push(`${file.name}: テキストが抽出できませんでした`);
+                    }
+                    
+                } catch (error) {
+                    console.error('ファイル処理エラー:', error);
+                    errorFiles.push(`${file.name}: ${error.message}`);
+                }
+            }
+            
+            // 結果をテキストエリアに設定
+            if (combinedText.trim()) {
+                textInput.value = combinedText.trim();
+                countCharacters();
+                
+                // 成功メッセージ
+                let successMessage = `✅ ${processedFiles.length}個のファイルを読み込みました`;
+                if (processedFiles.length > 0) {
+                    successMessage += `\n📁 ${processedFiles.join(', ')}`;
+                }
+                
+                showFileStatus(successMessage, 'success');
+                
+                // 現在のファイル情報を表示
+                currentFile.textContent = `読み込み済み: ${processedFiles.join(', ')}`;
+                currentFile.style.display = 'block';
+            }
+            
+            // エラーメッセージ
+            if (errorFiles.length > 0) {
+                const errorMessage = `❌ エラー:\n${errorFiles.join('\n')}`;
+                if (processedFiles.length === 0) {
+                    showFileStatus(errorMessage, 'error');
+                } else {
+                    // 部分的成功の場合、成功メッセージにエラーを追加
+                    const currentMessage = fileStatus.textContent;
+                    showFileStatus(currentMessage + '\n\n' + errorMessage, 'success');
+                }
+            }
+            
+            updateProgress(100, '処理完了');
+        }
+
+        // 単語を抽出して解析する関数
+        function analyzeWords(text) {
+            if (!text.trim()) {
+                return [];
+            }
+
+            // テキストを単語に分割（日本語と英語の混在に対応）
+            const words = [];
+            
+            // 英単語の抽出
+            const englishWords = text.match(/[A-Za-z]+/g) || [];
+            words.push(...englishWords);
+            
+            // 日本語の単語抽出（拡張版：より包括的な日本語文字範囲）
+            const japaneseWords = text.match(/[ひ-ゖァ-ヾー一-龯々〆〤ヽヾゝゞ]+/g) || [];
+            words.push(...japaneseWords);
+            
+            // 数字の抽出
+            const numbers = text.match(/[0-9]+/g) || [];
+            words.push(...numbers);
+
+            // 文字数フィルター
+            const minLength = parseInt(minWordLength.value) || 2;
+            const filteredWords = words.filter(word => word.length >= minLength);
+
+            // 単語をカウント
+            const wordCount = {};
+            filteredWords.forEach(word => {
+                const lowerWord = word.toLowerCase(); // 英語の大文字小文字を統一
+                wordCount[lowerWord] = (wordCount[lowerWord] || 0) + 1;
+            });
+
+            // 総単語数を計算
+            const totalWords = Object.values(wordCount).reduce((sum, count) => sum + count, 0);
+
+            // 配列に変換してソート
+            const wordArray = Object.entries(wordCount).map(([word, count]) => ({
+                word,
+                count,
+                percent: ((count / totalWords) * 100).toFixed(1)
+            }));
+
+            // ソート
+            const sort = sortOrder.value;
+            wordArray.sort((a, b) => {
+                if (sort === 'count') {
+                    return b.count - a.count;
+                } else if (sort === 'percent') {
+                    return parseFloat(b.percent) - parseFloat(a.percent);
+                } else if (sort === 'alphabetical') {
+                    return a.word.localeCompare(b.word);
+                }
+                return 0;
+            });
+
+            // 表示件数制限
+            const maxCount = parseInt(maxWords.value) || 20;
+            return wordArray.slice(0, maxCount);
+        }
+
+        // 単語分析結果を表示する関数
+        function displayWordAnalysis(wordData) {
+            if (!wordData || wordData.length === 0) {
+                wordList.innerHTML = '<div class="no-words">分析対象の単語が見つかりませんでした</div>';
+                return;
+            }
+
+            const html = wordData.map(item => `
+                <div class="word-item">
+                    <span class="word-text">${item.word}</span>
+                    <div class="word-stats">
+                        <span class="word-count">${item.count}回</span>
+                        <span class="word-percent">${item.percent}%</span>
+                    </div>
+                </div>
+            `).join('');
+
+            wordList.innerHTML = html;
+        }
+
+        // 文字数をカウントする関数
+        function countCharacters() {
+            const text = textInput.value;
+            
+            // 基本カウント
+            const total = text.length;
+            const noSpace = text.replace(/\s/g, '').length;
+            const noBreak = text.replace(/\n/g, '').length;
+            const lines = text.split('\n').length;
+            
+            // バイト数計算（UTF-8）
+            const bytes = new Blob([text]).size;
+            
+            // 読了時間計算（平均400文字/分）
+            const readMinutes = Math.ceil(noSpace / 400);
+            
+            // 文字種別カウント
+            const hiragana = (text.match(REGEX.hiragana) || []).length;
+            const katakana = (text.match(REGEX.katakana) || []).length;
+            const kanji = (text.match(REGEX.kanji) || []).length;
+            const alphaNum = (text.match(REGEX.alphaNum) || []).length;
+            const symbol = (text.match(REGEX.symbol) || []).length;
+            const space = (text.match(REGEX.space) || []).length;
+            
+            // 基本統計の表示
+            totalChars.textContent = total;
+            noSpaceChars.textContent = noSpace;
+            noBreakChars.textContent = noBreak;
+            lineCount.textContent = lines;
+            byteCount.textContent = bytes;
+            readTime.textContent = readMinutes;
+            
+            // 文字種別の表示
+            hiraganaCount.textContent = hiragana;
+            hiraganaPercent.textContent = calculatePercentage(hiragana, total) + '%';
+            
+            katakanaCount.textContent = katakana;
+            katakanaPercent.textContent = calculatePercentage(katakana, total) + '%';
+            
+            kanjiCount.textContent = kanji;
+            kanjiPercent.textContent = calculatePercentage(kanji, total) + '%';
+            
+            alphaNumCount.textContent = alphaNum;
+            alphaNumPercent.textContent = calculatePercentage(alphaNum, total) + '%';
+            
+            symbolCount.textContent = symbol;
+            symbolPercent.textContent = calculatePercentage(symbol, total) + '%';
+            
+            spaceCount.textContent = space;
+            spacePercent.textContent = calculatePercentage(space, total) + '%';
+            
+            // 単語分析の実行と表示
+            const wordData = analyzeWords(text);
+            displayWordAnalysis(wordData);
+            
+            // デバッグ用（開発者コンソールに表示）
+            console.log('分析結果:', {
+                基本: { total, noSpace, noBreak, lines, bytes, readMinutes },
+                文字種別: { hiragana, katakana, kanji, alphaNum, symbol, space },
+                単語分析: wordData.slice(0, 5) // 上位5件のみ表示
+            });
+        }
+
+        // 単語分析設定変更時の処理
+        function onWordSettingsChange() {
+            countCharacters(); // 再分析を実行
+        }
+
+        // クリアボタンの処理
+        function clearText() {
+            textInput.value = '';
+            countCharacters();
+            textInput.focus();
+            
+            // ファイル状態をリセット
+            fileStatus.className = 'file-status';
+            progressBar.style.display = 'none';
+            currentFile.style.display = 'none';
+            fileInput.value = '';
+            
+            console.log('テキストをクリアしました');
+        }
+
+        // ドラッグ&ドロップイベントハンドラ
+        function handleDragOver(e) {
+            e.preventDefault();
+            fileDropArea.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            fileDropArea.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            fileDropArea.classList.remove('drag-over');
+            
+            const files = Array.from(e.dataTransfer.files);
+            processFiles(files);
+        }
+
+        function handleFileSelect(e) {
+            const files = Array.from(e.target.files);
+            processFiles(files);
+        }
+
+        // イベントリスナーの設定
+        textInput.addEventListener('input', countCharacters);
+        clearBtn.addEventListener('click', clearText);
+
+        // ファイル関連のイベントリスナー
+        fileDropArea.addEventListener('dragover', handleDragOver);
+        fileDropArea.addEventListener('dragleave', handleDragLeave);
+        fileDropArea.addEventListener('drop', handleDrop);
+        fileDropArea.addEventListener('click', () => fileInput.click());
+        fileSelectBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // 単語分析設定のイベントリスナー
+        minWordLength.addEventListener('change', onWordSettingsChange);
+        maxWords.addEventListener('change', onWordSettingsChange);
+        sortOrder.addEventListener('change', onWordSettingsChange);
+
+        // 初期実行
+        countCharacters();
+        
+        console.log('文字数チェックツール（txt/PDF/Word対応版）が初期化されました');
+    </script>
+</body>
+</html>
